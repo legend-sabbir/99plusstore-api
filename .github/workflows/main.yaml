@@ -1,0 +1,48 @@
+name: Fetch and Compress JSON Data
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  fetch-compress-json:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+
+      - name: Remove old file
+        run: |
+          rm -f data.json.gz
+          
+      - name: Fetch JSON data
+        run: |
+          curl -o products.json "https://ap-south-1.aws.data.mongodb-api.com/app/99plus-store-zhmcges/endpoint/products" && curl -o customized.json "https://ap-south-1.aws.data.mongodb-api.com/app/99plus-store-zhmcges/endpoint/customized"
+
+      - name: Modify JSON data
+        run: node script.cjs
+
+      - name: Compress JSON data
+        run: |
+          gzip data.json && rm -rf products.json && rm -rf customized.json
+
+      - name: Commit and push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git add data.json.gz
+          git commit -m "Update data.json.gz"
+          git push origin HEAD:${{ github.ref }}
