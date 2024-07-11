@@ -11,7 +11,7 @@ const updatedData = products
     return Object.assign(p, item);
   })
   .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
-  .filter(p => p.stock > 0)
+  .filter(p => p.stock > 0 && p.visibility)
   .map(p => {
     const obj = p
     delete obj._id
